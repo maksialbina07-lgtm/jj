@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forma — редактор дизайна</title>
+  <style>
+    :root {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #252631;
+      background: #f5f5f8;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      min-width: 900px;
+      overflow: hidden;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 58px 1fr;
+    }
+
+    .topbar {
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 18px;
+      background: #fff;
+      border-bottom: 1px solid #e7e7ec;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 750;
+      letter-spacing: -.04em;
+    }
+
+    .brand-mark {
+      width: 25px;
+      height: 25px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(145deg, #6a5cff, #9672ff);
+      font-size: 15px;
+    }
+
+    .divider {
+      width: 1px;
+      height: 25px;
+      background: #e8e8ed;
+    }
+
+    .file-name {
+      border: 0;
+      outline: 0;
+      width: 190px;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .save-status {
+      color: #858591;
+      font-size: 12px;
+    }
+
+    .top-spacer { flex: 1; }
+
+    .avatar {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e7e2ff;
+      color: #5a48c8;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .share-button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 15px;
+      color: #fff;
+      background: #6554ed;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 58px 230px minmax(0, 1fr) 265px;
+    }
+
+    .toolrail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      padding: 13px 0;
+      background: #fff;
+      border-right: 1px solid #e7e7ec;
+    }
+
+    .tool-button {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #676875;
+      cursor: pointer;
+      font-size: 17px;
+    }
+
+    .tool-button:hover { background: #f2f1ff; }
+    .tool-button.active { background: #eeecff; color: #6251e8; }
+    .tool-separator { width: 24px; height: 1px; margin: 4px 0; background: #ececf0; }
+
+    .left-panel, .right-panel {
+      min-height: 0;
+      background: #fff;
+    }
+
+    .left-panel { border-right: 1px solid #e7e7ec; }
+    .right-panel { border-left: 1px solid #e7e7ec; }
+
+    .panel-heading {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+      border-bottom: 1px solid #eeeeF2;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .muted { color: #92929d; font-weight: 500; }
+
+    .panel-section { padding: 15px 13px; }
+    .section-title {
+      margin: 0 0 12px;
+      color: #858591;
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .page-row, .layer-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 31px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .page-row { background: #f3f2ff; color: #5948d6; font-weight: 600; }
+    .layer-list { display: grid; gap: 3px; }
+
+    .layer-row {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .layer-row:hover { background: #f6f6f9; }
+    .layer-row.selected { background: #eeecff; color: #5948d6; }
+    .layer-icon { width: 15px; color: #858591; text-align: center; }
+    .layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .canvas-area {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      background-color: #f4f4f7;
+      background-image: radial-gradient(#d8d8df .8px, transparent .8px);
+      background-size: 18px 18px;
+    }
+
+    .canvas-stage {
+      min-width: 100%;
+      min-height: 100%;
+      width: max-content;
+      display: grid;
+      place-items: center;
+      padding: 70px;
+    }
+
+    .artboard {
+      position: relative;
+      flex: none;
+      width: 900px;
+      height: 620px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 5px 24px #25263118, 0 0 0 1px #25263112;
+      transform-origin: top left;
+    }
+
+    .artboard-label {
+      position: absolute;
+      top: -25px;
+      left: 0;
+      color: #777782;
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    .design-item {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      min-width: 20px;
+      min-height: 20px;
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .design-item.selected {
+      outline: 2px solid #6554ed;
+      outline-offset: 1px;
+    }
+
+    .design-item.selected::after {
+      position: absolute;
+      right: -5px;
+      bottom: -5px;
+      width: 8px;
+      height: 8px;
+      border: 1px solid #fff;
+      border-radius: 2px;
+      background: #6554ed;
+      content: "";
+    }
+
+    .design-item.text-item {
+      display: block;
+      overflow: hidden;
+      white-space: pre-wrap;
+      cursor: move;
+    }
+
+    .canvas-hint {
+      position: absolute;
+      right: 16px;
+      bottom: 15px;
+      padding: 7px 10px;
+      border: 1px solid #e7e7ec;
+      border-radius: 7px;
+      background: #ffffffdc;
+      color: #777782;
+      font-size: 10px;
+      pointer-events: none;
+    }
+
+    .property-group {
+      padding: 15px 13px;
+      border-bottom: 1px solid #eeeeF2;
+    }
+
+    .property-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #777782;
+      font-size: 11px;
+    }
+
+    .property-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .property-field {
+      width: 100%;
+      height: 31px;
+      padding: 0 8px;
+      border: 1px solid #e5e5eb;
+      border-radius: 6px;
+      outline: none;
+      color: #33343e;
+      background: #fff;
+      font-size: 11px;
+    }
+
+    .property-field:focus { border-color: #8c80f5; }
+    input[type="color"].property-field { padding: 3px; cursor: pointer; }
+
+    .fill-row {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .empty-selection {
+      padding: 23px 16px;
+      color: #92929d;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .zoom-control {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px;
+      border: 1px solid #e4e4e9;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 8px #2222220a;
+    }
+
+    .zoom-control button {
+      width: 25px;
+      height: 25px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .zoom-control button:hover { background: #f3f2ff; }
+    .zoom-value { min-width: 38px; color: #666672; font-size: 11px; text-align: center; }
+
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns: 52px 190px minmax(0, 1fr) 225px; }
+      .canvas-stage { padding: 55px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">f</span><span>forma</span></div>
+      <span class="divider"></span>
+      <input class="file-name" aria-label="Название документа" value="Новый дизайн">
+      <span class="save-status">Все изменения сохранены</span>
+      <div class="top-spacer"></div>
+      <div class="avatar" title="Ваш профиль">АИ</div>
+      <button class="share-button" id="shareButton">Поделиться</button>
+    </header>
+
+    <section class="workspace">
+      <nav class="toolrail" aria-label="Инструменты">
+        <button class="tool-button active" data-tool="select" title="Выбор (V)">↖</button>
+        <span class="tool-separator"></span>
+        <button class="tool-button" data-tool="rect" title="Прямоугольник (R)">▭</button>
+        <button class="tool-button" data-tool="ellipse" title="Эллипс (E)">◯</button>
+        <button class="tool-button" data-tool="text" title="Текст (T)">T</button>
+      </nav>
+
+      <aside class="left-panel">
+        <div class="panel-heading"><span>Слои</span><span class="muted">⌕</span></div>
+        <div class="panel-section">
+          <p class="section-title">Страницы</p>
+          <div class="page-row"><span>▤</span><span>Страница 1</span></div>
+        </div>
+        <div class="panel-section">
+          <p class="section-title">Объекты</p>
+          <div class="layer-list" id="layerList"></div>
+        </div>
+      </aside>
+
+      <section class="canvas-area" id="canvasArea" aria-label="Рабочая область">
+        <div class="canvas-stage" id="canvasStage">
+          <div class="artboard" id="artboard" aria-label="Холст">
+            <span class="artboard-label">Артборд · 900 × 620</span>
+          </div>
+        </div>
+        <div class="zoom-control">
+          <button id="zoomOut" aria-label="Уменьшить">−</button>
+          <span class="zoom-value" id="zoomValue">100%</span>
+          <button id="zoomIn" aria-label="Увеличить">+</button>
+        </div>
+        <div class="canvas-hint">Выберите инструмент и нажмите на холст · Delete — удалить</div>
+      </section>
+
+      <aside class="right-panel">
+        <div class="panel-heading"><span>Свойства</span><span class="muted">Дизайн</span></div>
+        <div id="properties">
+          <div class="empty-selection">Выберите объект на холсте или в списке слоёв, чтобы изменить его свойства.</div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const artboard = document.querySelector("#artboard");
+    const layerList = document.querySelector("#layerList");
+    const properties = document.querySelector("#properties");
+    const toolButtons = [...document.querySelectorAll("[data-tool]")];
+
+    let items = [];
+    let selectedId = null;
+    let activeTool = "select";
+    let zoom = 1;
+    let nextId = 1;
+
+    const escapeHtml = (value) =>
+      String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+
+    function setTool(tool) {
+      activeTool = tool;
+      toolButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.tool === tool);
+      });
+      artboard.style.cursor = tool === "select" ? "default" : "crosshair";
+    }
+
+    function addItem(type, x, y) {
+      const item = {
+        id: nextId++,
+        type,
+        name: type === "rect" ? "Прямоугольник" : type === "ellipse" ? "Эллипс" : "Текст",
+        x: Math.round(x),
+        y: Math.round(y),
+        width: type === "text" ? 180 : 140,
+        height: type === "text" ? 40 : 100,
+        fill: type === "text" ? "#33343e" : "#c9c3ff",
+        text: type === "text" ? "Ваш текст" : ""
+      };
+      items.unshift(item);
+      selectedId = item.id;
+      render();
+    }
+
+    function render() {
+      artboard.querySelectorAll(".design-item").forEach((node) => node.remove());
+
+      for (const item of [...items].reverse()) {
+        const node = document.createElement("div");
+        node.className = `design-item${item.type === "text" ? " text-item" : ""}${item.id === selectedId ? " selected" : ""}`;
+        node.dataset.id = item.id;
+        node.style.left = `${item.x}px`;
+        node.style.top = `${item.y}px`;
+        node.style.width = `${item.width}px`;
+        node.style.height = `${item.height}px`;
+        node.style.background = item.type === "text" ? "transparent" : item.fill;
+        node.style.color = item.type === "text" ? item.fill : "inherit";
+        if (item.type === "ellipse") node.style.borderRadius = "50%";
+        if (item.type === "text") {
+          node.textContent = item.text;
+          node.style.fontSize = "20px";
+        }
+        node.addEventListener("pointerdown", startDrag);
+        node.addEventListener("click", (event) => event.stopPropagation());
+        artboard.append(node);
+      }
+
+      renderLayers();
+      renderProperties();
+    }
+
+    function renderLayers() {
+      layerList.innerHTML = items.map((item) => `
+        <button class="layer-row${item.id === selectedId ? " selected" : ""}" data-layer-id="${item.id}">
+          <span class="layer-icon">${item.type === "text" ? "T" : item.type === "ellipse" ? "◯" : "▭"}</span>
+          <span class="layer-name">${escapeHtml(item.name)}</span>
+        </button>
+      `).join("");
+
+      layerList.querySelectorAll("[data-layer-id]").forEach((row) => {
+        row.addEventListener("click", () => {
+          selectedId = Number(row.dataset.layerId);
+          render();
+        });
+      });
+    }
+
+    function renderProperties() {
+      const item = items.find((entry) => entry.id === selectedId);
+      if (!item) {
+        properties.innerHTML = '<div class="empty-selection">Выберите объект на холсте или в списке слоёв, чтобы изменить его свойства.</div>';
+        return;
+      }
+
+      properties.innerHTML = `
+        <div class="property-group">
+          <label class="property-label">Название слоя</label>
+          <input class="property-field" data-prop="name" value="${escapeHtml(item.name)}">
+        </div>
+        <div class="property-group">
+          <p class="section-title">Положение и размер</p>
+          <div class="property-grid">
+            <label><span class="property-label">X</span><input class="property-field" data-prop="x" type="number" value="${item.x}"></label>
+            <label><span class="property-label">Y</span><input class="property-field" data-prop="y" type="number" value="${item.y}"></label>
+            <label><span class="property-label">Ширина</span><input class="property-field" data-prop="width" type="number" min="20" value="${item.width}"></label>
+            <label><span class="property-label">Высота</span><input class="property-field" data-prop="height" type="number" min="20" value="${item.height}"></label>
+          </div>
+        </div>
+        <div class="property-group">
+          <p class="section-title">${item.type === "text" ? "Текст" : "Заливка"}</p>
+          ${item.type === "text"
+            ? '<input class="property-field" data-prop="text" value="' + escapeHtml(item.text) + '">'
+            : '<div class="fill-row"><input class="property-field" data-prop="fill" type="color" value="' + item.fill + '"><input class="property-field" data-prop="fillText" value="' + item.fill + '"></div>'}
+        </div>
+      `;
+
+      properties.querySelectorAll("[data-prop]").forEach((field) => {
+        field.addEventListener("input", () => {
+          const current = items.find((entry) => entry.id === selectedId);
+          if (!current) return;
+
+          if (field.dataset.prop === "fillText") {
+            const color = field.value;
+            if (/^#[0-9a-f]{6}$/i.test(color)) current.fill = color;
+          } else if (["x", "y", "width", "height"].includes(field.dataset.prop)) {
+            const value = Number(field.value);
+            if (Number.isFinite(value)) current[field.dataset.prop] = Math.max(
+              field.dataset.prop === "width" || field.dataset.prop === "height" ? 20 : 0,
+              value
+            );
+          } else {
+            current[field.dataset.prop] = field.value;
+          }
+          render();
+        });
+      });
+    }
+
+    function startDrag(event) {
+      if (activeTool !== "select") return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const id = Number(event.currentTarget.dataset.id);
+      selectedId = id;
+      const item = items.find((entry) => entry.id === id);
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const originalX = item.x;
+      const originalY = item.y;
+
+      render();
+      const move = (moveEvent) => {
+        item.x = Math.max(0, Math.round(originalX + (moveEvent.clientX - startX) / zoom));
+        item.y = Math.max(0, Math.round(originalY + (moveEvent.clientY - startY) / zoom));
+        const node = artboard.querySelector(`[data-id="${id}"]`);
+        if (node) {
+          node.style.left = `${item.x}px`;
+          node.style.top = `${item.y}px`;
+        }
+      };
+      const stop = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", stop);
+        renderLayers();
+        renderProperties();
+      };
+
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", stop, { once: true });
+    }
+
+    artboard.addEventListener("click", (event) => {
+      if (event.target !== artboard && !event.target.classList.contains("artboard-label")) return;
+
+      if (activeTool === "select") {
+        selectedId = null;
+        render();
+        return;
+      }
+
+      const bounds = artboard.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / zoom;
+      const y = (event.clientY - bounds.top) / zoom;
+      addItem(activeTool, x, y);
+      setTool("select");
+    });
+
+    toolButtons.forEach((button) => {
+      button.addEventListener("click", () => setTool(button.dataset.tool));
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const typing = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
+      if (typing) return;
+
+      const shortcuts = { v: "select", r: "rect", e: "ellipse", t: "text" };
+      if (shortcuts[event.key.toLowerCase()]) setTool(shortcuts[event.key.toLowerCase()]);
+
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (selectedId !== null) {
+          items = items.filter((item) => item.id !== selectedId);
+          selectedId = null;
+          render();
+        }
+      }
+
+      if (event.key === "Escape") {
+        selectedId = null;
+        setTool("select");
+        render();
+      }
+    });
+
+    function updateZoom() {
+      artboard.style.transform = `scale(${zoom})`;
+      document.querySelector("#canvasStage").style.width = `${900 * zoom + 140}px`;
+      document.querySelector("#canvasStage").style.minHeight = `${620 * zoom + 140}px`;
+      document.querySelector("#zoomValue").textContent = `${Math.round(zoom * 100)}%`;
+    }
+
+    document.querySelector("#zoomIn").addEventListener("click", () => {
+      zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10);
+      updateZoom();
+    });
+    document.querySelector("#zoomOut").addEventListener("click", () => {
+      zoom = Math.max(0.5, Math.round((zoom - 0.1) * 10) / 10);
+      updateZoom();
+    });
+    document.querySelector("#shareButton").addEventListener("click", () => {
+      alert("Это демонстрационный прототип. Совместное редактирование пока не подключено.");
+    });
+
+    updateZoom();
+  </script>
+</body>
+</html>
